@@ -1,0 +1,19 @@
+pre-commit:
+  parallel: true
+  commands:
+    # Python Agent Linting
+    ruff:
+      root: "agent/oribit_agent"
+      run: "uv run ruff check ."
+    black:
+      root: "agent/oribit_agent"
+      run: "uv run black --check ."
+    mypy:
+      root: "agent/oribit_agent"
+      run: "uv run mypy src"
+    
+    # Frontend Type Checking
+    frontend-typecheck:
+      root: "app/Orbit"
+      run: "pnpm run type-check"
+
