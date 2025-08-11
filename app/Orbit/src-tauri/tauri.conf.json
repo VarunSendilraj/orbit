@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "orbit",
+  "productName": "Orbit",
   "version": "0.1.0",
   "identifier": "com.varunsendilraj.orbit",
   "build": {
@@ -10,11 +10,22 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "orbit",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "Orbit",
+        "width": 1100,
+        "height": 750,
+        "minWidth": 900,
+        "minHeight": 650,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "resizable": true,
+        "fullscreen": false,
+        "skipTaskbar": false,
+        "visibleOnAllWorkspaces": false
       }
     ],
     "security": {

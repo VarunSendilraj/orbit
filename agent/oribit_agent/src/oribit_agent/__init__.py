@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from oribit-agent!")
+from .cli import main as main  # re-export CLI entrypoint

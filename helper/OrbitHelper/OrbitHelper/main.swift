@@ -17,6 +17,9 @@ func printUsage() {
       OrbitHelper run-applescript 'tell application "System Events" to keystroke "n" using command down'
       OrbitHelper click-menu "App Name" "Menu" "Menu Item"
       OrbitHelper check-ax
+      OrbitHelper click-element "App Name" "Button Name"
+      OrbitHelper get-text "App Name" "Element Name"
+      OrbitHelper wait-for-element "App Name" "Element Name" [timeout]
     """)
 }
 
@@ -72,6 +75,90 @@ func clickMenu(app: String, menu: String, item: String) throws {
     _ = try runAppleScript(script)
 }
 
+func clickElement(app: String, elementName: String) throws {
+    ensureAccessibilityPermission()
+    let script = """
+    tell application "\(app)" to activate
+    delay 0.5
+    tell application "System Events"
+      tell process "\(app)"
+        try
+          click button "\(elementName)"
+        on error
+          try
+            click UI element "\(elementName)"
+          on error
+            error "Could not find element: \(elementName)"
+          end try
+        end try
+      end tell
+    end tell
+    """
+    _ = try runAppleScript(script)
+}
+
+func getText(app: String, elementName: String) throws -> String {
+    ensureAccessibilityPermission()
+    let script = """
+    tell application "\(app)" to activate
+    delay 0.5
+    tell application "System Events"
+      tell process "\(app)"
+        try
+          set textValue to value of text field "\(elementName)"
+          return textValue
+        on error
+          try
+            set textValue to name of UI element "\(elementName)"
+            return textValue
+          on error
+            try
+              set textValue to value of UI element "\(elementName)"
+              return textValue
+            on error
+              return "Could not get text from element: \(elementName)"
+            end try
+          end try
+        end try
+      end tell
+    end tell
+    """
+    return try runAppleScript(script)
+}
+
+func waitForElement(app: String, elementName: String, timeout: Int = 10) throws {
+    ensureAccessibilityPermission()
+    let script = """
+    tell application "\(app)" to activate
+    delay 0.5
+    tell application "System Events"
+      tell process "\(app)"
+        set startTime to current date
+        repeat
+          try
+            if exists button "\(elementName)" then
+              return "Found button: \(elementName)"
+            end if
+          on error
+            try
+              if exists UI element "\(elementName)" then
+                return "Found element: \(elementName)"
+              end if
+            end try
+          end try
+          
+          if (current date) - startTime > \(timeout) then
+            error "Timeout waiting for element: \(elementName)"
+          end if
+          delay 0.5
+        end repeat
+      end tell
+    end tell
+    """
+    let result = try runAppleScript(script)
+    print(result)
+}
+
 // ---- main argument routing ----
 let args = CommandLine.arguments.dropFirst()
 guard let cmd = args.first else {
@@ -101,6 +188,23 @@ do {
 
     case "check-ax":
         ensureAccessibilityPermission()
+        
+    case "click-element":
+        let parts = Array(args.dropFirst())
+        guard parts.count == 2 else { throw HelperError.usage("click-element requires 2 args: app, element") }
+        try clickElement(app: parts[0], elementName: parts[1])
+        
+    case "get-text":
+        let parts = Array(args.dropFirst())
+        guard parts.count == 2 else { throw HelperError.usage("get-text requires 2 args: app, element") }
+        let text = try getText(app: parts[0], elementName: parts[1])
+        print(text)
+        
+    case "wait-for-element":
+        let parts = Array(args.dropFirst())
+        guard parts.count >= 2 else { throw HelperError.usage("wait-for-element requires at least 2 args: app, element [timeout]") }
+        let timeout = parts.count >= 3 ? Int(parts[2]) ?? 10 : 10
+        try waitForElement(app: parts[0], elementName: parts[1], timeout: timeout)
 
     default:
         printUsage(); exit(1)
